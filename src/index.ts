@@ -11,6 +11,7 @@ import authRoutes from "./routes/auth.route";
 import userRoutes from "./routes/user.route";
 import isAuthenticated from "./middlewares/isAuthenticated.middleware";
 import noteRoutes from "./routes/note.route";
+import { HTTPSTATUS } from "./config/http.config";
 
 
 const app = express();
@@ -34,6 +35,7 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+
 // app.use(
 //   cors({
 //     origin: true,
@@ -44,22 +46,18 @@ app.use(passport.session());
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://memmomind.io.vn"],
+    origin: ["http://localhost:5173", "https://memmomind.io.vn", "https://memmomind.vercel.app"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 
-app.get(
-  `/`,
-  // asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  //   throw new BadRequestException(
-  //     "This is a bad request",
-  //     ErrorCodeEnum.AUTH_INVALID_TOKEN
-  //   );
-  // })
-);
+app.get("/", (req: Request, res: Response) => {
+  res.status(HTTPSTATUS.OK).json({
+    message: "Welcome to MemmoMind API",
+  });
+});
 
 app.use(`${BASE_PATH}/auth`, authRoutes);
 app.use(`${BASE_PATH}/user`, isAuthenticated, userRoutes);
@@ -67,7 +65,7 @@ app.use(`${BASE_PATH}/note`, isAuthenticated, noteRoutes);
 
 app.use(errorHandler);
 
-app.listen(3000, async () => {
+app.listen(Number(config.PORT), async () => {
   console.log(`Server listening on port ${config.PORT} in ${config.NODE_ENV}`);
   await connectDatabase();
 });

@@ -10,6 +10,7 @@ export interface UserDocument extends Document {
   lastLogin: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  isVerified: boolean;
   comparePassword(value: string): Promise<boolean>;
   omitPassword(): Omit<UserDocument, "password">;
 }
@@ -35,6 +36,7 @@ const userSchema = new Schema<UserDocument>(
     },
     isActive: { type: Boolean, default: true },
     lastLogin: { type: Date, default: null },
+    isVerified: { type: Boolean, default: false },
   },
   {
     timestamps: true,
@@ -42,22 +44,26 @@ const userSchema = new Schema<UserDocument>(
 );
 
 userSchema.pre("save", async function (next) {
-  if (this.isModified("password")) {
-    if (this.password) {
-      this.password = await hashValue(this.password);
-    }
-  }
+  if (this.isModified("password"))
   next();
 });
 
 userSchema.methods.omitPassword = function () {
   const { password, ...userWithoutPassword } = this.toObject();
-  return userWithoutPassword; // Trả về object đã loại bỏ password
+  return userWithoutPassword;
 };
 
-
 userSchema.methods.comparePassword = async function (value: string) {
-  return compareValue(value, this.password);
+  try {
+    const isMatch = await compareValue(value, this.password);
+    console.log("comparePassword - Provided Password:", value);
+    console.log("comparePassword - Hashed Password:", this.password);
+    console.log("comparePassword - isMatch:", isMatch);
+    return isMatch;
+  } catch (error) {
+    console.error("comparePassword - Error comparing passwords:", error);
+    throw new Error("Error comparing passwords");
+  }
 };
 
 const UserModel = mongoose.model<UserDocument>("User", userSchema);

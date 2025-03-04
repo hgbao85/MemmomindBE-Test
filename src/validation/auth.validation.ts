@@ -19,3 +19,16 @@ export const loginSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
 });
+
+export const forgotPasswordSchema = z.object({
+  email: emailSchema,
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().trim().min(1),
+  newPassword: passwordSchema,
+});
+
+export const verifyEmailSchema = z.object({
+  token: z.string().trim().min(1),
+});

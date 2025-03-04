@@ -7,8 +7,11 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from "../utils/appError";
+import { verifyToken } from "../services/token.service";
+import { sendResetPasswordEmail } from "../services/email.service";
+import { hashValue, compareValue } from "../utils/bcrypt";
 
-export const loginOrCreateAccountService = async (data: {
+export const createAccountService = async (data: {
   provider: string;
   displayName: string;
   providerId: string;
@@ -70,10 +73,14 @@ export const registerUserService = async (body: {
       throw new BadRequestException("Tài khoản đã được đăng ký!");
     }
 
+    const hashedPassword = await hashValue(password);
+    console.log("Hashed Password:", hashedPassword); // Log để kiểm tra
+
     const user = new UserModel({
       email,
       name,
-      password,
+      password: hashedPassword,
+      isVerified: false,
     });
     await user.save({ session });
 
@@ -98,6 +105,58 @@ export const registerUserService = async (body: {
   }
 };
 
+export const verifyEmailService = async (token: string) => {
+  const userId = verifyToken(token);
+
+  if (!userId) {
+    throw new BadRequestException("Token không hợp lệ");
+  }
+
+  const user = await UserModel.findById(userId);
+  if (!user) {
+    throw new NotFoundException("Người dùng không tồn tại");
+  }
+
+  if (user.isVerified) {
+    throw new BadRequestException("Email đã được xác thực trước đó");
+  }
+
+  user.isVerified = true;
+  await user.save();
+
+  return user;
+};
+
+export const forgotPasswordService = async (email: string) => {
+  const user = await UserModel.findOne({ email });
+  if (!user) {
+    // Tránh tiết lộ thông tin về sự tồn tại của email
+    return null;
+  }
+
+  await sendResetPasswordEmail(user._id as string, user.email);
+
+  return user;
+};
+
+export const resetPasswordService = async (token: string, newPassword: string) => {
+  const userId = verifyToken(token);
+
+  if (!userId) {
+    throw new BadRequestException("Token không hợp lệ");
+  }
+
+  const user = await UserModel.findById(userId);
+  if (!user) {
+    throw new NotFoundException("Người dùng không tồn tại hoặc token không hợp lệ");
+  }
+
+  user.password = await hashValue(newPassword);
+  await user.save();
+
+  return user;
+};
+
 export const verifyUserService = async ({
   email,
   password,
@@ -106,7 +165,7 @@ export const verifyUserService = async ({
   email: string;
   password: string;
   provider?: string;
-}): Promise<Record<string, any> | null> => { // 🛠 Sửa kiểu trả về
+}): Promise<Record<string, any> | null> => {
   const account = await AccountModel.findOne({ provider, providerId: email });
   if (!account) {
     throw new NotFoundException("Email không chính xác!");
@@ -117,11 +176,15 @@ export const verifyUserService = async ({
     throw new NotFoundException("User not found for the given account");
   }
 
-  const isMatch = await user.comparePassword(password);
+  const isMatch = await compareValue(password, user.password as string);
+  console.log("Provided Password:", password);
+  console.log("Hashed Password:", user.password);
+  console.log("isMatch:", isMatch);
+
   if (!isMatch) {
     throw new UnauthorizedException("Mật khẩu không chính xác!");
   }
 
-  return user.omitPassword(); // 🛠 Trả về object đã loại bỏ password
+  return user.omitPassword();
 };
 

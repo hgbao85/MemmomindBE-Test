@@ -8,7 +8,7 @@ const isAuthenticated = async (req: Request, res: Response, next: NextFunction):
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
         console.warn("❌ Không có Authorization header! Request sẽ bị từ chối.");
         res.status(401).json({ message: "Unauthorized: No token provided" });
-        return; // 🛠 Xóa return trước res.status
+        return;
     }
 
     const token = authHeader.split(" ")[1];
@@ -19,20 +19,23 @@ const isAuthenticated = async (req: Request, res: Response, next: NextFunction):
             throw new UnauthorizedException("Token is missing user ID");
         }
 
-        // 🛠 Lấy user từ DB và đảm bảo _id là string
         const user = await UserModel.findById(decoded.userId).lean();
 
         if (!user) {
             throw new UnauthorizedException("User not found");
         }
 
-        req.user = { ...user, _id: user._id.toString() } as Express.User; // 🛠 Ép kiểu chính xác
+        if (!user.isVerified) {
+          throw new UnauthorizedException("Email chưa được xác thực");
+        }
+
+        req.user = { ...user, _id: user._id.toString() } as Express.User;
 
         next();
     } catch (error) {
         console.error("❌ Token không hợp lệ:", error);
         res.status(401).json({ message: "Unauthorized: Invalid token" });
-        return; // 🛠 Thêm return để tránh lỗi TypeScript
+        return;
     }
 };
 

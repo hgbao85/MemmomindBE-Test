@@ -1,89 +1,149 @@
 import { NextFunction, Request, Response } from "express";
 import { asyncHandler } from "../middlewares/asyncHandler.middleware";
 import { config } from "../config/app.config";
-import { registerSchema } from "../validation/auth.validation";
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema } from "../validation/auth.validation";
 import { HTTPSTATUS } from "../config/http.config";
-import { registerUserService } from "../services/auth.service";
+import { registerUserService, verifyEmailService, forgotPasswordService, resetPasswordService } from "../services/auth.service";
 import passport from "passport";
 import jwt from "jsonwebtoken";
+import { sendVerificationEmail, sendResetPasswordEmail } from "../services/email.service";
+import { BadRequestException, NotFoundException, UnauthorizedException } from "../utils/appError";
 
 export const googleLoginCallback = asyncHandler(
-    async (req: Request, res: Response) => {
-      return res.redirect(`${config.FRONTEND_ORIGIN}/homepage`);
-    }
-  );
+  async (req: Request, res: Response) => {
+    return res.redirect(`${config.FRONTEND_ORIGIN}/homepage`);
+  }
+);
 
 export const registerUserController = asyncHandler(
   async (req: Request, res: Response) => {
-    const body = registerSchema.parse({
-      ...req.body,
-    });
+    const body = registerSchema.parse(req.body);
 
-    await registerUserService(body);
+    const { userId } = await registerUserService(body);
+
+    // Gửi email xác thực
+    await sendVerificationEmail(userId as string, body.email);
 
     return res.status(HTTPSTATUS.CREATED).json({
-      message: "Tài khoản được tạo thành công!",
+      message: "Tài khoản được tạo thành công! Vui lòng kiểm tra email để xác thực tài khoản.",
     });
   }
 );
 
-export const loginController = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
-    passport.authenticate(
-      "local",
-      (
-        err: Error | null,
-        user: Express.User | false,
-        info: { message: string } | undefined
-      ) => {
-        if (err) {
-          return next(err);
-        }
+export const verifyEmailController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { token } = verifyEmailSchema.parse(req.query);
 
-        if (!user) {
-          return res.status(HTTPSTATUS.UNAUTHORIZED).json({
-            message: info?.message || "Sai email hoặc mật khẩu",
-          });
-        }
+    if (!token) {
+      throw new BadRequestException("Token không hợp lệ");
+    }
 
-        req.logIn(user, (err) => {
+    const user = await verifyEmailService(token);
+
+    if (!user) {
+      throw new NotFoundException("Người dùng không tồn tại");
+    }
+
+    return res.status(HTTPSTATUS.OK).json({
+      success: true,
+      message: "Email đã được xác thực thành công!",
+      user: user.omitPassword(),
+    });
+  }
+);
+  
+  export const forgotPasswordController = asyncHandler(
+    async (req: Request, res: Response) => {
+      const { email } = forgotPasswordSchema.parse(req.body);
+  
+      await forgotPasswordService(email);
+  
+      return res.status(HTTPSTATUS.OK).json({
+        message: "Email đã được gửi. Vui lòng kiểm tra hòm thư của bạn.",
+      });
+    }
+  );
+
+  export const resetPasswordController = asyncHandler(
+    async (req: Request, res: Response) => {
+      const { token, newPassword } = resetPasswordSchema.parse(req.body);
+  
+      const user = await resetPasswordService(token, newPassword);
+  
+      if (!user) {
+        throw new BadRequestException("Người dùng không tồn tại hoặc token không hợp lệ");
+      }
+  
+      return res.status(HTTPSTATUS.OK).json({
+        success: true,
+        message: "Mật khẩu đã được đặt lại thành công!",
+        user: user.omitPassword(),
+      });
+    }
+  );
+
+  export const loginController = asyncHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+  
+      passport.authenticate(
+        "local",
+        (
+          err: Error | null,
+          user: Express.User | false,
+          info: { message: string } | undefined
+        ) => {
           if (err) {
+            console.error("Error during authentication:", err);
             return next(err);
           }
-
-          // ✅ Tạo JWT token
-          const token = jwt.sign(
-            { userId: user._id }, // Payload phải chứa _id
-            process.env.JWT_SECRET || "your_secret_key",
-            { expiresIn: "7d" } // Thời hạn token
-          );
-
-          return res.status(HTTPSTATUS.OK).json({
-            success: true,
-            message: "Đăng nhập thành công!",
-            user,
-            token,  // ✅ Trả token về cho frontend
+  
+          if (!user) {
+            console.warn("Authentication failed:", info?.message || "Invalid credentials");
+            return res.status(HTTPSTATUS.UNAUTHORIZED).json({
+              message: info?.message || "Sai email hoặc mật khẩu",
+            });
+          }
+  
+          req.logIn(user, (err) => {
+            if (err) {
+              console.error("Error logging in user:", err);
+              return next(err);
+            }
+  
+            // Tạo JWT token
+            const token = jwt.sign(
+              { userId: user._id }, // Payload phải chứa _id
+              process.env.JWT_SECRET || "your_secret_key",
+              { expiresIn: "1d" } // Thời hạn token
+            );
+  
+            return res.status(HTTPSTATUS.OK).json({
+              success: true,
+              message: "Đăng nhập thành công!",
+              user,
+              token,  // Trả token về cho frontend
+            });
           });
-        });
-      }
-    )(req, res, next);
-  }
-);
+        }
+      )(req, res, next);
+    }
+  );
+  
 
-export const logOutController = asyncHandler(
-  async (req: Request, res: Response) => {
-    req.logout((err) => {
-      if (err) {
-        console.error("Logout error:", err);
-        return res
-          .status(HTTPSTATUS.INTERNAL_SERVER_ERROR)
-          .json({ error: "Đăng xuất thất bại!" });
-      }
-    });
-
-    req.session = null;
-    return res
-      .status(HTTPSTATUS.OK)
-      .json({ message: "Đăng xuất thành công!" });
-  }
-);
+  export const logOutController = asyncHandler(
+    async (req: Request, res: Response) => {
+      req.logout((err) => {
+        if (err) {
+          console.error("Logout error:", err);
+          return res
+            .status(HTTPSTATUS.INTERNAL_SERVER_ERROR)
+            .json({ error: "Đăng xuất thất bại!" });
+        }
+      });
+  
+      req.session = null;
+      return res
+        .status(HTTPSTATUS.OK)
+        .json({ message: "Đăng xuất thành công!" });
+    }
+  );
