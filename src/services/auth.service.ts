@@ -188,3 +188,20 @@ export const verifyUserService = async ({
   return user.omitPassword();
 };
 
+export const changePasswordService = async (
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+) => {
+  const user = await UserModel.findById(userId);
+  if (!user) throw new NotFoundException("User not found");
+
+  // Kiểm tra mật khẩu hiện tại
+  const isMatch = await user.comparePassword(currentPassword);
+  if (!isMatch) throw new UnauthorizedException("Current password is incorrect");
+
+  // Cập nhật mật khẩu mới
+  user.password = await hashValue(newPassword);
+  await user.save();
+  return user;
+};

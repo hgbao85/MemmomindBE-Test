@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import { asyncHandler } from "../middlewares/asyncHandler.middleware";
 import { config } from "../config/app.config";
-import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema } from "../validation/auth.validation";
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema, changePasswordSchema } from "../validation/auth.validation";
 import { HTTPSTATUS } from "../config/http.config";
-import { registerUserService, verifyEmailService, forgotPasswordService, resetPasswordService } from "../services/auth.service";
+import { registerUserService, verifyEmailService, forgotPasswordService, resetPasswordService, changePasswordService } from "../services/auth.service";
 import passport from "passport";
 import jwt from "jsonwebtoken";
 import { sendVerificationEmail, sendResetPasswordEmail } from "../services/email.service";
@@ -147,3 +147,14 @@ export const verifyEmailController = asyncHandler(
         .json({ message: "Đăng xuất thành công!" });
     }
   );
+
+  export const changePasswordController = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?._id;
+    if (!userId) throw new UnauthorizedException("User not authenticated");
+    const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+    const updatedUser = await changePasswordService(userId, currentPassword, newPassword);
+    return res.status(HTTPSTATUS.OK).json({
+      message: "Password changed successfully",
+      user: updatedUser.omitPassword(),
+    });
+  });
