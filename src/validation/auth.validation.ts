@@ -32,3 +32,12 @@ export const resetPasswordSchema = z.object({
 export const verifyEmailSchema = z.object({
   token: z.string().trim().min(1),
 });
+
+export const profileUpdateSchema = z.object({
+  name: z.string().trim().min(1).max(255).optional(),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: passwordSchema,
+  newPassword: passwordSchema,
+});

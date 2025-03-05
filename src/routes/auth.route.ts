@@ -9,6 +9,7 @@ import {
   forgotPasswordController,
   resetPasswordController,
   verifyEmailController,
+  changePasswordController,
 } from "../controllers/auth.controller";
 
 const failedUrl = `${config.FRONTEND_GOOGLE_CALLBACK_URL}?status=failure`;
@@ -18,6 +19,7 @@ const authRoutes = Router();
 authRoutes.post("/register", registerUserController);
 authRoutes.post("/login", loginController);
 authRoutes.post("/logout", logOutController);
+authRoutes.put("/change-password", changePasswordController);
 
 authRoutes.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 authRoutes.get("/google/callback", passport.authenticate("google", { failureRedirect: failedUrl }), googleLoginCallback);
