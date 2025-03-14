@@ -37,8 +37,8 @@ const transporter = nodemailer.createTransport({
       from: '"MemmoMind" <noreply@memmomind.io.vn>',
       to: email,
       subject: "Đặt Lại Mật Khẩu MemmoMind",
-      text: `Chào bạn,\n\nVui lòng nhấp vào liên kết sau để đặt lại mật khẩu của bạn:\n\n${config.FRONTEND_ORIGIN}/api/auth/reset-password?token=${verificationToken}`,
-      html: `<p>Chào bạn,</p><p>Vui lòng nhấp vào liên kết sau để đặt lại mật khẩu của bạn:</p><p><a href="${config.FRONTEND_ORIGIN}/api/auth/reset-password?token=${verificationToken}">Đặt lại mật khẩu</a></p>`,
+      text: `Chào bạn,\n\nVui lòng nhấp vào liên kết sau để đặt lại mật khẩu của bạn:\n\n${config.FRONTEND_ORIGIN}/reset-password?token=${verificationToken}`,
+      html: `<p>Chào bạn,</p><p>Vui lòng nhấp vào liên kết sau để đặt lại mật khẩu của bạn:</p><p><a href="${config.FRONTEND_ORIGIN}/reset-password?token=${verificationToken}">Đặt lại mật khẩu</a></p>`,
     };
   
     try {
