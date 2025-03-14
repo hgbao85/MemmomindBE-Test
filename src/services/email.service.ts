@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
       to: email,
       subject: "Xác thực Tài Khoản MemmoMind",
       text: `Chào bạn,\n\nVui lòng nhấp vào liên kết sau để xác thực tài khoản của bạn:\n\n${config.BACKEND_ORIGIN}/api/auth/verify-email?token=${verificationToken}`,
-      html: `<p>Chào bạn,</p><p>Vui lòng nhấp vào liên kết sau để xác thực tài khoản của bạn:</p><p><a href="${config.BACKEND_ORIGIN}/api/auth/verify-email?token=${verificationToken}">Xác thực tài khoản</a></p>`,
+      html: `<p>Chào bạn,</p><p>Vui lòng nhấp vào liên kết sau để xác thực tài khoản của bạn:</p><p><a href="${config.FRONTEND_ORIGIN}/verify-email?token=${verificationToken}">Xác thực tài khoản</a></p>`,
     };
   
     try {
