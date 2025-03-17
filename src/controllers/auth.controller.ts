@@ -25,7 +25,7 @@ export const registerUserController = asyncHandler(
     await sendVerificationEmail(userId as string, body.email);
 
     return res.status(HTTPSTATUS.CREATED).json({
-      message: "Tài khoản được tạo thành công! Vui lòng kiểm tra email để xác thực tài khoản.",
+      message: "Tài khoản được tạo thành công! Vui lòng kiểm tra email để xác thực tài khoản. Nếu không thấy email, vui lòng kiểm tra hòm thư rác.",
     });
   }
 );
@@ -59,7 +59,7 @@ export const verifyEmailController = asyncHandler(
       await forgotPasswordService(email);
   
       return res.status(HTTPSTATUS.OK).json({
-        message: "Email đã được gửi. Vui lòng kiểm tra hòm thư của bạn.",
+        message: "Email đặt lại mật khẩu đã được gửi! Vui lòng kiểm tra email của bạn. Nếu không thấy email, vui lòng kiểm tra hòm thư rác.",
       });
     }
   );

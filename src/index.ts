@@ -12,6 +12,7 @@ import userRoutes from "./routes/user.route";
 import isAuthenticated from "./middlewares/isAuthenticated.middleware";
 import noteRoutes from "./routes/note.route";
 import { HTTPSTATUS } from "./config/http.config";
+import "./schedulers/freeCostScheduler";
 
 
 const app = express();

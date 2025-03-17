@@ -15,7 +15,6 @@ const appConfig = () => ({
   EMAIL_USER: getEnv("EMAIL_USER"),
   EMAIL_PASS: getEnv("EMAIL_PASS"),
   JWT_SECRET: getEnv("JWT_SECRET"),
-  BACKEND_ORIGIN: getEnv("BACKEND_ORIGIN", "http://localhost:3000"),
 });
 
 export const config = appConfig();

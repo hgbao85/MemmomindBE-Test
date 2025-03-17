@@ -1,6 +1,10 @@
 import mongoose, { Document, Schema } from "mongoose";
 import { compareValue, hashValue } from "../utils/bcrypt";
 
+export enum UserRole {
+  FREE_VERSION = "freeVersion",
+  COST_VERSION = "costVersion",
+}
 export interface UserDocument extends Document {
   name: string;
   email: string;
@@ -11,6 +15,11 @@ export interface UserDocument extends Document {
   createdAt: Date;
   updatedAt: Date;
   isVerified: boolean;
+  totalCost: number;
+  totalPurchasedCost: number;
+  freeCost: number;
+  totalFreeCost: number;
+  role: UserRole;
   comparePassword(value: string): Promise<boolean>;
   omitPassword(): Omit<UserDocument, "password">;
 }
@@ -37,6 +46,11 @@ const userSchema = new Schema<UserDocument>(
     isActive: { type: Boolean, default: true },
     lastLogin: { type: Date, default: null },
     isVerified: { type: Boolean, default: false },
+    totalCost: { type: Number, default: 0 },
+    totalPurchasedCost: { type: Number, default: 0 },
+    freeCost: { type: Number, default:  0},
+    totalFreeCost: { type: Number, default: 0.004},
+    role: { type: String, enum: [UserRole.FREE_VERSION, UserRole.COST_VERSION], default: UserRole.FREE_VERSION }, // Vai trò của người dùng
   },
   {
     timestamps: true,
