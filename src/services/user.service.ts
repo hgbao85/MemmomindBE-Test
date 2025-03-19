@@ -70,42 +70,14 @@ export const updateTotalPurchasedCostService = async (
   purchasedCost: number
 ) => {
   const user = await UserModel.findById(userId);
-  if (!user) {
-    throw new NotFoundException("User not found");
-  }
+  if (!user) throw new NotFoundException("User not found");
 
-  // Cộng dồn giá trị totalPurchasedCost mới
+  // Cập nhật totalPurchasedCost
   user.totalPurchasedCost += purchasedCost;
+  // Chuyển role sang costVersion khi user mua dịch vụ
+  user.role = UserRole.COST_VERSION;
+console.log("role", user.role);
 
-  // Lưu thay đổi vào cơ sở dữ liệu
   await user.save();
-
-  return user;
+  return user.omitPassword();
 };
-
-// export const updateFreeCostService = async (
-//   userId: string,
-//   freeCost: number
-// ) => {
-//   const user = await UserModel.findById(userId);
-//   if (!user) {
-//     throw new NotFoundException("User not found");
-//   }
-
-//   if (user.role !== UserRole.FREE_VERSION) {
-//     throw new BadRequestException("User is not in free version");
-//   }
-
-//   // Kiểm tra xem freeCost có vượt quá totalFreeCost không
-//   if (user.freeCost + freeCost > user.totalFreeCost) {
-//     throw new BadRequestException("Free cost exceeds total free cost");
-//   }
-
-//   // Cộng dồn giá trị freeCost mới
-//   user.freeCost += freeCost;
-
-//   // Lưu thay đổi vào cơ sở dữ liệu
-//   await user.save();
-
-//   return user;
-// };

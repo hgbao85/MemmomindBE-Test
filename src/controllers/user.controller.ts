@@ -4,6 +4,7 @@ import { HTTPSTATUS } from "../config/http.config";
 import { getCurrentUserService, getUserProfileService, updateUserProfileService, updateTotalCostService, updateTotalPurchasedCostService } from "../services/user.service";
 import { profileUpdateSchema } from "../validation/auth.validation";
 import { UnauthorizedException } from "../utils/appError";
+import TransactionModel from "../models/transaction.model";
 
 export const getCurrentUserController = asyncHandler(
   async (req: Request, res: Response) => {
@@ -71,17 +72,25 @@ export const updateTotalCostController = asyncHandler(
 export const updateTotalPurchasedCostController = asyncHandler(
   async (req: Request, res: Response) => {
     try {
-      const { userId, purchasedCost } = req.body;
+      console.log("Received data:", req.body);
+      const { userId, purchasedCost, orderCode } = req.body;
 
-      // Kiểm tra đầu vào
-      if (!userId || typeof purchasedCost !== "number") {
+      if (!userId || typeof purchasedCost !== "number" || !orderCode) {
         return res.status(400).json({ message: "Invalid input" });
       }
 
-      // Cập nhật totalPurchasedCost
+      // 🛑 Kiểm tra nếu orderCode này đã được xử lý trước đó
+      const existingTransaction = await TransactionModel.findOne({ orderCode });
+      if (existingTransaction) {
+        return res.status(400).json({ message: "Order already processed" });
+      }
+
+      // ✅ Cập nhật totalPurchasedCost
       const updatedUser = await updateTotalPurchasedCostService(userId, purchasedCost);
 
-      // Trả về thông tin người dùng đã cập nhật
+      // 💾 Lưu giao dịch để đánh dấu đã xử lý
+      await TransactionModel.create({ userId, orderCode, amount: purchasedCost });
+
       return res.status(HTTPSTATUS.OK).json({
         success: true,
         message: "Total purchased cost updated successfully",
@@ -97,33 +106,3 @@ export const updateTotalPurchasedCostController = asyncHandler(
     }
   }
 );
-
-// export const updateFreeCostController = asyncHandler(
-//   async (req: Request, res: Response) => {
-//     try {
-//       const { userId, freeCost } = req.body;
-
-//       // Kiểm tra đầu vào
-//       if (!userId || typeof freeCost !== "number") {
-//         return res.status(400).json({ message: "Invalid input" });
-//       }
-
-//       // Cập nhật freeCost
-//       const updatedUser = await updateFreeCostService(userId, freeCost);
-
-//       // Trả về thông tin người dùng đã cập nhật
-//       return res.status(HTTPSTATUS.OK).json({
-//         success: true,
-//         message: "Free cost updated successfully",
-//         user: updatedUser,
-//       });
-//     } catch (error) {
-//       console.error("Error in updateFreeCostController:", error);
-//       return res.status(HTTPSTATUS.INTERNAL_SERVER_ERROR).json({
-//         success: false,
-//         message: "Internal Server Error",
-//         error: (error as Error).message,
-//       });
-//     }
-//   }
-// );

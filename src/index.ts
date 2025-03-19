@@ -13,6 +13,8 @@ import isAuthenticated from "./middlewares/isAuthenticated.middleware";
 import noteRoutes from "./routes/note.route";
 import { HTTPSTATUS } from "./config/http.config";
 import "./schedulers/freeCostScheduler";
+import paymentRoutes from "./routes/payment.route";
+import webhookRoutes from "./routes/webhook.router";
 
 
 const app = express();
@@ -63,6 +65,8 @@ app.get("/", (req: Request, res: Response) => {
 app.use(`${BASE_PATH}/auth`, authRoutes);
 app.use(`${BASE_PATH}/user`, isAuthenticated, userRoutes);
 app.use(`${BASE_PATH}/note`, isAuthenticated, noteRoutes);
+app.use(`${BASE_PATH}/payment`, isAuthenticated, paymentRoutes);
+app.use(`${BASE_PATH}/webhook`, webhookRoutes);
 
 app.use(errorHandler);
 

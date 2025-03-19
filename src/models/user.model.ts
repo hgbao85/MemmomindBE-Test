@@ -58,7 +58,13 @@ const userSchema = new Schema<UserDocument>(
 );
 
 userSchema.pre("save", async function (next) {
-  if (this.isModified("password"))
+  console.log(`Checking role update: totalCost=${this.totalCost}, totalPurchasedCost=${this.totalPurchasedCost}`);
+
+  const total = parseFloat((this.totalPurchasedCost * 0.9999).toFixed(6));
+  const cost = parseFloat(this.totalCost.toFixed(6));
+  if (cost >= total) {
+    this.role = UserRole.FREE_VERSION;
+  }
   next();
 });
 
