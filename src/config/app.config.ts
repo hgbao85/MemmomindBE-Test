@@ -15,6 +15,10 @@ const appConfig = () => ({
   EMAIL_USER: getEnv("EMAIL_USER"),
   EMAIL_PASS: getEnv("EMAIL_PASS"),
   JWT_SECRET: getEnv("JWT_SECRET"),
+  PAYOS_CLIENT_ID: getEnv("PAYOS_CLIENT_ID"),
+  PAYOS_API_KEY: getEnv("PAYOS_API_KEY"),
+  PAYOS_CHECKSUM_KEY: getEnv("PAYOS_CHECKSUM_KEY"),
+  PAYOS_BASE_URL: getEnv("PAYOS_BASE_URL", "https://api.payos.vn"),
 });
 
 export const config = appConfig();

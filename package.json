@@ -13,10 +13,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@payos/node": "^1.0.10",
     "@types/nodemailer": "^6.4.17",
     "bcrypt": "^5.1.1",
     "cookie-session": "^2.1.0",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
