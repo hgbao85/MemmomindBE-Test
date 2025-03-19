@@ -49,7 +49,7 @@ app.use(passport.session());
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://memmomind.io.vn", "https://memmomind.vercel.app"],
+    origin: ["http://localhost:5173", "https://memmomind.io.vn", "https://memmomind.vercel.app", "https://memmomind-fe-test.vercel.app"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
   })
